@@ -57,31 +57,30 @@ UKF::UKF() {
   Hint: one or more values initialized above might be wildly off...
   */
 
+  // Set n_x_
+  n_x_ = 5;
+
+  // Initialize Covariance Matrix
+  P_ = MatrixXd::Identity(n_x_,n_x_);
+
+  // Try to correct standard deviation in longitudinal noise accelation and yaw accelaration
   std_a_ = 0.3;
   std_yawdd_ = 0.3;
 
+  // Set not initialized
   is_initialized_ = false;
   
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
   
+  // Set lambda
+  lambda_ = 3 - n_x_;
+
+  n_aug_ = n_x_ + 2;
+  n_sig_ = 2 * n_aug_ + 1;
+  weights_ = VectorXd(n_sig_);
+
+  // Set initial time 0
   time_us_ = 0.0;
-
-  weights_ = VectorXd(2 * n_aug_ + 1);
-
-  n_x_ = 5;
-
-  n_aug_ = 7;
-
-  lambda_ = 3 - n_x_;;
-
-  H_ = MatrixXd(2, 5);
-  H_ << 1,0,0,0,0,
-      0,1,0,0,0;
-
-  R_ = MatrixXd(2, 2);
-  R_ << 1, 0,
-        0, 1;
-
 }
 
 UKF::~UKF() {}
@@ -297,21 +296,42 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   
   z << meas_package.raw_measurements_(0),
        meas_package.raw_measurements_(1);
-       
-  VectorXd z_pred = H_ * x_;
-  VectorXd y = z - z_pred;
-  MatrixXd Ht = H_.transpose();
-  MatrixXd S = H_ * P_ * Ht + R_;
-  MatrixXd Si = S.inverse();
-  MatrixXd PHt = P_ * Ht;
-  MatrixXd K = PHt * Si;
-  
-  x_ = x_ + (K * y);
-  long x_size = x_.size();
-  MatrixXd I = MatrixXd::Identity(x_size, x_size);
-  P_ = (I - K * H_) * P_;
- 
+
+  MatrixXd Zsig = Xsig_pred_.block(0, 0, n_z, 2 * n_aug_ + 1);
+
+  VectorXd z_pred = VectorXd(n_z);
+  z_pred.fill(0.0);
+  for (int i=0; i < 2*n_aug_+1; i++) {
+    z_pred = z_pred + weights_(i) * Zsig.col(i);
+  }
+
+  R_ = MatrixXd(2, 2);
+  R_ << std_radr_*std_radr_, 0,
+        0, std_radphi_*std_radphi_;
+
+  MatrixXd S = MatrixXd(n_z,n_z);
+  S.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+    VectorXd z_diff = Zsig.col(i) - z_pred;
+    S = S + weights_(i) * z_diff * z_diff.transpose();
+  }
+  S = S + R_;
+
+  MatrixXd Tc = MatrixXd(n_x_, n_z);
+  Tc.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+    VectorXd z_diff = Zsig.col(i) - z_pred;
+    VectorXd x_diff = Xsig_pred_.col(i) - x_;
+    Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
+  }
+
+  MatrixXd S_inv = S.inverse();
+  MatrixXd K = Tc * S_inv;
+
   VectorXd z_diff = z - z_pred;
+
+  x_ = x_ + K * z_diff;
+  P_ = P_ - K*S*K.transpose();
 
   // Calculate Normalized Innovation Squared value for Lidar
   NIS_laser_ = z_diff.transpose() * S.inverse() * z_diff;
