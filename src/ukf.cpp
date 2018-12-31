@@ -258,7 +258,7 @@ void UKF::Prediction(double delta_t) {
   //predicted state mean
   x_.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-    x_ = x_ + weights_(i) * Xsig_pred.col(i);
+    x_ = x_ + weights_(i) * Xsig_pred_.col(i);
   }
   //x_ += Xsig_pred_ * weights_;
 
@@ -267,7 +267,7 @@ void UKF::Prediction(double delta_t) {
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
 
     // state difference
-    VectorXd x_diff = Xsig_pred.col(i) - x_;
+    VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //angle normalization
     while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
     while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
@@ -307,8 +307,8 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   }
 
   R_ = MatrixXd(2, 2);
-  R_ << std_radr_*std_radr_, 0,
-        0, std_radphi_*std_radphi_;
+  R_ << std_laspx_*std_laspx_, 0,
+        0, std_laspy_*std_laspy_;
 
   MatrixXd S = MatrixXd(n_z,n_z);
   S.fill(0.0);
