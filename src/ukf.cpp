@@ -27,10 +27,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 30;
+  //std_a_ = 30;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 30;
+  //std_yawdd_ = 30;
   
   //DO NOT MODIFY measurement noise values below these are provided by the sensor manufacturer.
   // Laser measurement noise standard deviation position1 in m
@@ -69,14 +69,15 @@ UKF::UKF() {
 
   // Set not initialized
   is_initialized_ = false;
+
+  n_aug_ = n_x_ + 2;
+  n_sig_ = 2 * n_aug_ + 1;
   
-  Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
+  Xsig_pred_ = MatrixXd(n_x_, n_sig_);
   
   // Set lambda
   lambda_ = 3 - n_x_;
 
-  n_aug_ = n_x_ + 2;
-  n_sig_ = 2 * n_aug_ + 1;
   weights_ = VectorXd(n_sig_);
 
   // Set initial time 0
@@ -116,8 +117,8 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     double rho_dot;
     double px;
     double py;
-    //double vx;
-    //double vy;
+    double vx;
+    double vy;
     double v;
 
     P_ << 1, 0, 0, 0, 0,
@@ -134,17 +135,16 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       py = rho * sin(phi);
       //vx = rho_dot * cos(phi);
       //vy = rho_dot * sin(phi);
-      v  = fabs(rho_dot); //sqrt(vx * vx + vy * vy);
-
-      x_ << px, py, v, 0, 0;
+      vx = rho_dot * cos(phi);
+      vy = rho_dot * sin(phi);
+      x_ << px, py, sqrt(vx*vx + vy*vy), atan2(vx,vy), 0;
     }
     else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
       px = meas_package.raw_measurements_[0];
       py = meas_package.raw_measurements_[1];
 
-      if (fabs(px) < MIN)  px = MIN;
-      if (fabs(py) < MIN)  py = MIN;
-
+      //if (fabs(px) < MIN)  px = MIN;
+      //if (fabs(py) < MIN)  py = MIN;
       x_ << px, py, 0, 0, 0;
     }
 
@@ -206,7 +206,6 @@ void UKF::Prediction(double delta_t) {
   /**
   Predict Sigma Points
   **/
-  MatrixXd Xsig_pred = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
   for (int i = 0; i< 2*n_aug_+1; i++)
   {
