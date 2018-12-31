@@ -350,7 +350,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   P_ = (I - K * H_) * P_;**/
 
   // Calculate Normalized Innovation Squared value for Lidar
-  NIS_laser_ = y.transpose() * S.inverse() * y; //z_diff -> y
+  NIS_laser_ = z_diff.transpose() * S.inverse() * z_diff; //z_diff -> y
 }
 
 /**
