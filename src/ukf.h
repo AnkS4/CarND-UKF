@@ -75,6 +75,8 @@ public:
   // Measurement matrix
   MatrixXd R_;
 
+  MatrixXd P_aug;
+
   /**
    * Constructor
    */

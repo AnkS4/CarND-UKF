@@ -91,6 +91,7 @@ UKF::UKF() {
     weights_(i) = weight;
   }
 
+  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
   // Initiate augmented covariance matrix
   P_aug.fill(0.0);
   P_aug.topLeftCorner(5,5) = P_;
@@ -183,7 +184,6 @@ void UKF::Prediction(double delta_t) {
   Generate Sigma Points
   **/
   VectorXd x_aug = VectorXd(n_aug_);
-  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
   MatrixXd Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
 
   //create augmented mean state
