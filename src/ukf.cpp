@@ -245,11 +245,11 @@ void UKF::Prediction(double delta_t) {
     yawd_p = yawd_p + nu_yawdd*delta_t;
 
     //write predicted sigma point into right column
-    Xsig_pred(0,i) = px_p;
-    Xsig_pred(1,i) = py_p;
-    Xsig_pred(2,i) = v_p;
-    Xsig_pred(3,i) = yaw_p;
-    Xsig_pred(4,i) = yawd_p;
+    Xsig_pred_(0,i) = px_p;
+    Xsig_pred_(1,i) = py_p;
+    Xsig_pred_(2,i) = v_p;
+    Xsig_pred_(3,i) = yaw_p;
+    Xsig_pred_(4,i) = yawd_p;
   }
 
   /**
@@ -257,10 +257,10 @@ void UKF::Prediction(double delta_t) {
   **/
   //predicted state mean
   x_.fill(0.0);
-  /**for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
     x_ = x_ + weights_(i) * Xsig_pred.col(i);
-  }**/
-  x_ += Xsig_pred_ * weights_;
+  }
+  //x_ += Xsig_pred_ * weights_;
 
   //predicted state covariance matrix
   P_.fill(0.0);
@@ -306,7 +306,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     z_pred = z_pred + weights_(i) * Zsig.col(i);
   }
 
-  /**R_ = MatrixXd(2, 2);
+  R_ = MatrixXd(2, 2);
   R_ << std_radr_*std_radr_, 0,
         0, std_radphi_*std_radphi_;
 
@@ -332,9 +332,9 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   VectorXd z_diff = z - z_pred;
 
   x_ = x_ + K * z_diff;
-  P_ = P_ - K*S*K.transpose();**/
+  P_ = P_ - K*S*K.transpose();
 
-  MatrixXd H_ = MatrixXd(2,5);
+  /**MatrixXd H_ = MatrixXd(2,5);
   H_ << 1, 0, 0, 0, 0,
       0, 1, 0, 0, 0;
 
@@ -347,7 +347,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   x_ = x_ + (K * y);
   int x_size = x_.size();
   MatrixXd I = MatrixXd::Identity(x_size, x_size);
-  P_ = (I - K * H_) * P_;
+  P_ = (I - K * H_) * P_;**/
 
   // Calculate Normalized Innovation Squared value for Lidar
   NIS_laser_ = y.transpose() * S.inverse() * y; //z_diff -> y
