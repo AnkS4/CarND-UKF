@@ -76,7 +76,7 @@ UKF::UKF() {
   Xsig_pred_ = MatrixXd(n_x_, n_sig_);
   
   // Set lambda
-  lambda_ = 3 - n_x_;
+  lambda_ = 3 - n_aug_; //n_x_;
 
   weights_ = VectorXd(n_sig_);
 
@@ -90,13 +90,6 @@ UKF::UKF() {
     double weight = 0.5 / (n_aug_ + lambda_);
     weights_(i) = weight;
   }
-
-  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
-  // Initiate augmented covariance matrix
-  P_aug.fill(0.0);
-  P_aug.topLeftCorner(5,5) = P_;
-  P_aug(5,5) = std_a_*std_a_;
-  P_aug(6,6) = std_yawdd_*std_yawdd_;
 }
 
 UKF::~UKF() {}
@@ -121,12 +114,6 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     double vx;
     double vy;
     double v;
-
-    P_ << 1, 0, 0, 0, 0,
-          0, 1, 0, 0, 0,
-          0, 0, 1, 0, 0,
-          0, 0, 0, 1, 0,
-          0, 0, 0, 0, 1;
 
     if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
       rho = meas_package.raw_measurements_[0];
@@ -185,6 +172,13 @@ void UKF::Prediction(double delta_t) {
   **/
   VectorXd x_aug = VectorXd(n_aug_);
   MatrixXd Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
+
+  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
+  // Initiate augmented covariance matrix
+  P_aug.fill(0.0);
+  P_aug.topLeftCorner(5,5) = P_;
+  P_aug(5,5) = std_a_*std_a_;
+  P_aug(6,6) = std_yawdd_*std_yawdd_;
 
   //create augmented mean state
   x_aug.head(5) = x_;
